@@ -42,30 +42,6 @@ const getProjectList = (list) => {
 
  */
 
-// [
-//   {
-//     name: '网络综合布线与组网实战',
-//     directory: [
-//       {
-//         name: 'demo',
-//         directory: [
-//           {
-//             name: '一期',
-//             files: [
-//               {
-//                 name: '4.xsl',
-//                 size: 1000
-//               },
-//             ]
-//         }],
-//       },
-//     ],
-//     files: []
-//   }
-// ];
-
-
-
 
 getFileTree = (list) => {
     const directory = [];

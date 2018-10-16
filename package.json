@@ -1,0 +1,22 @@
+{
+  "name": "dirtool",
+  "version": "1.0.0",
+  "description": "数据结构转换方法",
+  "main": "index.js",
+  "scripts": {
+    "test": "node ./test/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xuanxia/dirtool.git"
+  },
+  "keywords": [
+    "node"
+  ],
+  "author": "xiaojian",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/xuanxia/dirtool/issues"
+  },
+  "homepage": "https://github.com/xuanxia/dirtool#readme"
+}

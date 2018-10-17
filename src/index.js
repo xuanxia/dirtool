@@ -1,49 +1,35 @@
-
-/**
- **@desc: 根据项目聚合文件
- **@date: 2018/10/12 下午5:00
- **@author: 小建
- */
 const getProjectList = (list) => {
     let result = [];
     list.map((item) => {
 
         if(result.length){
-        let flag = true;
-        result.map((projectItem,index)=>{
-            // 目前通过name对比同一项目
-            if(projectItem.name === item.project.name){
-            result[index].fileList.push(item);
-            flag = false;
-        }
-    });
+            let flag = true;
+            result.map((projectItem,index)=>{
+                // 目前通过name对比同一项目
+                if(projectItem.name === item.project.name){
+                    result[index].fileList.push(item);
+                    flag = false;
+                }
+            });
 
-        if(flag){
+            if(flag){
+                const project = item.project;
+                project.fileList = [item];
+                result.push(project);
+            }
+
+        }else{
             const project = item.project;
             project.fileList = [item];
             result.push(project);
         }
 
-    }else{
-        const project = item.project;
-        project.fileList = [item];
-        result.push(project);
-    }
-
-});
+    });
     return result;
 };
 
 
-/**
- **@desc: 将flies 列表 转成如下树结构
- **@date: 2018/10/12 下午5:26
- **@author: 小建
-
- */
-
-
-getFileTree = (list) => {
+const getFileTree = (list) => {
     const directory = [];
     const files = [];
 
@@ -60,7 +46,8 @@ getFileTree = (list) => {
             if(fileNameSplitListLength === 2){
                 return {
                     name,
-                    files:[Object.assign(item,{name:fileName})]
+                    files:[Object.assign(item,{name:fileName})],
+                    directory:[],
                 }
             }else{
 
@@ -68,7 +55,8 @@ getFileTree = (list) => {
 
                     return [{
                         name,
-                        files:[Object.assign(item,{name:fileName})]
+                        files:[Object.assign(item,{name:fileName})],
+                        directory:[],
                     }]
 
                 }
@@ -91,7 +79,7 @@ getFileTree = (list) => {
             }
         };
 
-        getNextFileNameSplitList = (startIndex)=>{
+        const getNextFileNameSplitList = (startIndex)=>{
             const result = [];
             for(startIndex; startIndex < fileNameSplitListLength; startIndex++ ){
                 result.push(fileNameSplitList[startIndex])
@@ -99,38 +87,32 @@ getFileTree = (list) => {
             return result;
         };
 
-        getExistDirObj = (index,nextFileNameSplitList) =>{
+        const getExistDirObj = (index,nextFileNameSplitList) =>{
             const name = nextFileNameSplitList[index];
             const nextIndex = index + 1;
 
             if(nextFileNameSplitList.length === 2){
-                return {
+                return [{
                     name,
-                    files:[Object.assign(item,{name:fileName})]
-                }
+                    files:[Object.assign(item,{name:fileName})],
+                    directory:[],
+                }]
             }
             else{
 
                 if(nextIndex === nextFileNameSplitList.length -1 ){
-                    return {
+                    return [{
                         name,
-                        files:[Object.assign(item,{name:fileName})]
-                    }
+                        files:[Object.assign(item,{name:fileName})],
+                        directory:[],
+                    }]
                 }
                 else {
-                    if(index === 0){
-                        return {
-                            name,
-                            directory: getExistDirObj(nextIndex,nextFileNameSplitList),
-                            files:[]
-                        }
-                    }else{
-                        return [{
-                            name,
-                            directory: getExistDirObj(nextIndex,nextFileNameSplitList),
-                            files:[]
-                        }]
-                    }
+                    return [{
+                        name,
+                        directory: getExistDirObj(nextIndex,nextFileNameSplitList),
+                        files:[]
+                    }]
                 }
             }
         };
@@ -142,12 +124,12 @@ getFileTree = (list) => {
                 const name = fileNameSplitList[i];
                 directory.forEach((dirObj,index)=>{
                     if( name === dirObj.name){
-                    result.push(index);
-                    if(dirObj.directory){
-                        findIndexs(nextIndex,dirObj.directory,result);
+                        result.push(index);
+                        if(dirObj.directory && dirObj.directory.length){
+                            findIndexs(nextIndex,dirObj.directory,result);
+                        }
                     }
-                }
-            })
+                })
             }
             return result;
         };
@@ -183,10 +165,10 @@ getFileTree = (list) => {
                         }else if(i === indexs.length -1){
 
                             const temp =  getExistDirObj(0, getNextFileNameSplitList(i+1));
-                            if(directory[indexs[i]].directory){
-                                directory[indexs[i]].directory.push(temp);
+                            if(directory[indexs[i]].directory && directory[indexs[i]].directory.length){
+                                directory[indexs[i]].directory = directory[indexs[i]].directory.concat(temp);
                             }else{
-                                directory[indexs[i]].directory = [temp]
+                                directory[indexs[i]].directory = temp;
                             }
 
 
@@ -221,7 +203,7 @@ getFileTree = (list) => {
     };
     list.forEach((item)=>{
         mountResult(item);
-});
+    });
 
     return {
         directory,
@@ -230,11 +212,10 @@ getFileTree = (list) => {
 };
 
 
-
 const dirTool = (list) =>{
-    const files = getProjectList(list);
-    return files.map((item)=>{
-        const {directory,files} =  getFileTree(item.fileList);
+    const projectList = getProjectList(list);
+    return projectList.map((item)=>{
+        const {directory,files} = getFileTree(item.fileList);
         item.directory = directory;
         item.files = files;
         delete item.fileList;
@@ -242,10 +223,33 @@ const dirTool = (list) =>{
     });
 };
 
+const getSuperiorData = (rootList,indexList)=>{
+    if(indexList.length === 0){
+        return {
+            directoryList: rootList,
+            fileList: [],
+        }
+    }
+
+    const getData = (i,list)=>{
+        const nextIndex = i+1;
+        if(nextIndex === indexList.length){
+            return {
+                directoryList: list[indexList[i]].directory,
+                fileList: list[indexList[i]].files,
+            }
+        }else{
+            return getData(nextIndex,list[indexList[i]].directory)
+        }
+    };
+
+    return getData(0,rootList);
+};
 
 module.exports =  {
     getProjectList,
     getFileTree,
+    getSuperiorData,
     dirTool,
 };
 
